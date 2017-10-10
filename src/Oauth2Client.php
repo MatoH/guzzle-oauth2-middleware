@@ -6,6 +6,7 @@ use Exception;
 use Frankkessler\Guzzle\Oauth2\Exceptions\InvalidGrantException;
 use Frankkessler\Guzzle\Oauth2\GrantType\GrantTypeBase;
 use Frankkessler\Guzzle\Oauth2\GrantType\GrantTypeInterface;
+use Frankkessler\Guzzle\Oauth2\GrantType\RefreshToken;
 use Frankkessler\Guzzle\Oauth2\GrantType\RefreshTokenGrantTypeInterface;
 use Frankkessler\Guzzle\Oauth2\Middleware\RetryModifyRequestMiddleware;
 use GuzzleHttp\Client;
@@ -179,6 +180,22 @@ class Oauth2Client extends Client
         }
         $this->accessToken = $accessToken;
     }
+
+    /**
+     * Set the access and refresh token with RefreshTokenGrantType.
+     *
+     * @param AccessToken $accessToken
+     * @param array $refreshTokenConfig
+     */
+    public function setAccessAndRefreshToken(AccessToken $accessToken, array $refreshTokenConfig)
+    {
+        $this->setAccessToken($accessToken);
+
+        $refreshToken = new RefreshToken($refreshTokenConfig);
+        $refreshToken->setRefreshToken($accessToken->getRefreshToken()->getToken());
+        $this->setRefreshTokenGrantType($refreshToken);
+    }
+
 
     /**
      * Set the refresh token.
