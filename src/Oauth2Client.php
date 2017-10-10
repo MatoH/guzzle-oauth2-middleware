@@ -182,22 +182,6 @@ class Oauth2Client extends Client
     }
 
     /**
-     * Set the access and refresh token with RefreshTokenGrantType.
-     *
-     * @param AccessToken $accessToken
-     * @param array $refreshTokenConfig
-     */
-    public function setAccessAndRefreshToken(AccessToken $accessToken, array $refreshTokenConfig)
-    {
-        $this->setAccessToken($accessToken);
-
-        $refreshToken = new RefreshToken($refreshTokenConfig);
-        $refreshToken->setRefreshToken($accessToken->getRefreshToken()->getToken());
-        $this->setRefreshTokenGrantType($refreshToken);
-    }
-
-
-    /**
      * Set the refresh token.
      *
      * @param AccessToken|string $refreshToken The refresh token
@@ -210,6 +194,21 @@ class Oauth2Client extends Client
             throw new \InvalidArgumentException('Invalid refresh token');
         }
         $this->refreshToken = $refreshToken;
+    }
+
+    /**
+     * Set the access and refresh token with RefreshTokenGrantType.
+     *
+     * @param AccessToken $accessToken
+     * @param array $refreshTokenConfig
+     */
+    public function setAccessAndRefreshToken(AccessToken $accessToken, array $refreshTokenConfig)
+    {
+        $this->setAccessToken($accessToken);
+
+        $refreshToken = new RefreshToken($refreshTokenConfig);
+        $refreshToken->setRefreshToken($accessToken->getRefreshToken()->getToken());
+        $this->setRefreshTokenGrantType($refreshToken);
     }
 
     public function getToken(GrantTypeBase $grantType)
