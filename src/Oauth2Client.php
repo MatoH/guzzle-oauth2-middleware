@@ -57,7 +57,7 @@ class Oauth2Client extends Client
             if ($this->getConfig('auth') == 'oauth2') {
                 $token = $this->getAccessToken();
                 if ($token !== null) {
-                    $request = $request->withHeader('Authorization', 'Bearer '.$token->getToken().'xxx');
+                    $request = $request->withHeader('Authorization', 'Bearer '.$token->getToken());
 
                     return $request;
                 }
