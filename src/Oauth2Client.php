@@ -56,9 +56,8 @@ class Oauth2Client extends Client
         $handler->push(Middleware::mapRequest(function (RequestInterface $request) {
             if ($this->getConfig('auth') == 'oauth2') {
                 $token = $this->getAccessToken();
-
                 if ($token !== null) {
-                    $request = $request->withHeader('Authorization', 'Bearer '.$token->getToken());
+                    $request = $request->withHeader('Authorization', 'Bearer '.$token->getToken().'xxx');
 
                     return $request;
                 }
@@ -82,9 +81,7 @@ class Oauth2Client extends Client
             function (RequestInterface $request, ResponseInterface $response) {
                 if ($response instanceof ResponseInterface) {
                     if (in_array($response->getStatusCode(), [400, 401])) {
-                        $token = $this->acquireAccessToken();
-                        $this->setAccessToken($token, 'Bearer');
-
+                        $token = $this->getAccessToken();
                         $modify['set_headers']['Authorization'] = 'Bearer '.$token->getToken();
 
                         return Psr7\modify_request($request, $modify);
