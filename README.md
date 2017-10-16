@@ -31,9 +31,10 @@ Alternatively, if you would like to run the node server in debug mode, you can r
 
 ## Example
 ```php
-use GuzzleHttp\Client;
-use Frankkessler\Guzzle\Oauth2\GrantType\PasswordCredentials;
 use Frankkessler\Guzzle\Oauth2\Oauth2Client;
+use Frankkessler\Guzzle\Oauth2\GrantType\PasswordCredentials;
+
+$httpClient = new Oauth2Client();
 
 $accessTokenConfig = [
     'token_url'     => 'https://example.com/accesstoken,
@@ -51,9 +52,9 @@ $refreshTokenConfig = [
 ];
 
 // Generated access token could be passed to simplify set up process
-$client->registerOAuth2(new PasswordCredentials($accessTokenConfig), $refreshTokenConfig, $accessToken);
+$httpClient->registerOAuth2(new PasswordCredentials($accessTokenConfig), $refreshTokenConfig, $accessToken);
 
-$response = $client->get('https://example.com/api/user/me');
+$response = $httpClient->get('https://example.com/api/user/me');
 
 $response_headers = $response->getHeaders();
 
@@ -61,6 +62,6 @@ $response_code = $response->getStatusCode();
 
 $response_body = (string) $response->getBody();
 
-$client->unregisterOAuth2();
+$httpClient->unregisterOAuth2();
 
 ```
