@@ -32,26 +32,27 @@ Alternatively, if you would like to run the node server in debug mode, you can r
 ## Example
 ```php
 use GuzzleHttp\Client;
-use Frankkessler\Guzzle\Oauth2\GrantType\RefreshToken;
 use Frankkessler\Guzzle\Oauth2\GrantType\PasswordCredentials;
 use Frankkessler\Guzzle\Oauth2\Oauth2Client;
+use Frankkessler\Guzzle\Oauth2\GrantType\RefreshToken;
 
-$base_uri = 'https://example.com';
-
-$client = new Oauth2Client(['base_uri' => $base_uri]);
-
-$config = [
-    'username' => 'test@example.com',
-    'password' => 'test password',
-    'client_id' => 'test-client',
-    'scope' => 'administration',
+$accessTokenConfig = [
+    'token_url'     => 'https://example.com/accesstoken,
+    'client_id'     => 'test-client',
+    'client_secret' => 'test-secret,
+    'username'      => 'example',
+    'password'      => 'password',
+    'scope'         => 'administration'
 ];
 
-$token = new PasswordCredentials($config);
-$client->setGrantType($token);
+$refreshTokenConfig = [
+    'token_url'     => 'https://example.com/refreshtoken',
+    'client_id'     => 'test-client',
+    'client_secret' => 'test-secret,
+];
 
-$refreshToken = new RefreshToken($config);
-$client->setRefreshTokenGrantType($refreshToken);
+// Generated access token could be passed to simplify set up process
+$client->registerOAuth2(new PasswordCredentials($accessTokenConfig), $refreshTokenConfig, $accessToken);
 
 $response = $client->get('https://example.com/api/user/me');
 
@@ -61,7 +62,6 @@ $response_code = $response->getStatusCode();
 
 $response_body = (string) $response->getBody();
 
-// Use $client->getAccessToken(); and $client->getRefreshToken() to get tokens
-// that can be persisted for subsequent requests.
+$client->unregisterOAuth2();
 
 ```
