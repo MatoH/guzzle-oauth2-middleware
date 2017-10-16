@@ -34,7 +34,6 @@ Alternatively, if you would like to run the node server in debug mode, you can r
 use GuzzleHttp\Client;
 use Frankkessler\Guzzle\Oauth2\GrantType\PasswordCredentials;
 use Frankkessler\Guzzle\Oauth2\Oauth2Client;
-use Frankkessler\Guzzle\Oauth2\GrantType\RefreshToken;
 
 $accessTokenConfig = [
     'token_url'     => 'https://example.com/accesstoken,
