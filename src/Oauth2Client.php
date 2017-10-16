@@ -18,81 +18,117 @@ use Psr\Http\Message\ResponseInterface;
 
 class Oauth2Client extends Client
 {
-    /** @var AccessToken|null */
+    /**
+     * @var AccessToken
+     */
     protected $accessToken;
-    /** @var AccessToken|null */
+
+    /**
+     * @var AccessToken
+     */
     protected $refreshToken;
 
-    /** @var GrantTypeInterface */
+    /**
+     * @var GrantTypeInterface
+     */
     protected $grantType;
-    /** @var RefreshTokenGrantTypeInterface */
+
+    /**
+     * @var RefreshTokenGrantTypeInterface
+     */
     protected $refreshTokenGrantType;
 
+    /**
+     * @var array
+     */
     protected $config;
+
+    /**
+     * @var HandlerStack
+     */
+    protected $handlerStack;
 
     public function __construct($config = [])
     {
-        $this->config = $config;
-
-        //allow a different handler stack to completely override the default stack for oauth
-        if (!isset($config['handler'])) {
-            $config['handler'] = $this->returnHandlers();
+        // Check if handler stack was passed in configuration
+        if (isset($config['handler'])) {
+            $this->handlerStack = $config['handler'];
+        } else {
+            // Create a handler stack that has all of the default middlewares attached
+            $this->handlerStack = HandlerStack::create();
+            $config['handler'] = $this->handlerStack;
         }
 
+        $this->config = $config;
         parent::__construct($config);
     }
 
     /**
-     * Set the middleware handlers for all requests using Oauth2.
+     * Register Oauth2 middlewares for guzzle handler stack,
+     * validate access token and renew if necessary
      *
-     * @return HandlerStack|null
+     * @param GrantTypeBase $grantType
+     * @param array $refreshTokenConfig
+     * @param AccessToken|null $accessToken
      */
-    protected function returnHandlers()
+    public function registerOauth2(GrantTypeBase $grantType, array $refreshTokenConfig, AccessToken $accessToken = null)
     {
-        // Create a handler stack that has all of the default middlewares attached
-        $handler = HandlerStack::create();
+        $this->setGrantType($grantType);
 
-        //Add the Authorization header to requests.
-        $handler->push(Middleware::mapRequest(function (RequestInterface $request) {
-            if ($this->getConfig('auth') == 'oauth2') {
-                $token = $this->getAccessToken();
-                if ($token !== null) {
-                    $request = $request->withHeader('Authorization', 'Bearer '.$token->getToken());
+        $accessToken = $accessToken ?? $this->getAccessToken();
+        $this->setAccessToken($accessToken);
 
-                    return $request;
-                }
+        $refreshToken = new RefreshToken($refreshTokenConfig);
+        $refreshToken->setRefreshToken($accessToken->getRefreshToken()->getToken());
+        $this->setRefreshTokenGrantType($refreshToken);
+
+        $this->registerHandlerStackMiddlewares();
+    }
+
+    /**
+     * Register stack middlewares for all requests using Oauth2
+     */
+    private function registerHandlerStackMiddlewares()
+    {
+        // Register middleware that will add the Authorization header with token to request
+        $this->handlerStack->push(Middleware::mapRequest(function (RequestInterface $request) {
+
+            if (!is_null($this->accessToken) && !$request->hasHeader('Authorization')) {
+                $request = $request->withHeader('Authorization', 'Bearer '.$this->accessToken->getToken());
+
+                return $request;
             }
 
             return $request;
-        }), 'add_oauth_header');
+        }), 'add_oauth2_header');
 
-        $handler->before('add_oauth_header', $this->retry_modify_request(function ($retries, RequestInterface $request, ResponseInterface $response = null, $error = null) {
+        // Register middleware that will re-execute the same request in case of some failure (timeout, authorization issue ...)
+        $this->handlerStack->before('add_oauth2_header', $this->retry_modify_request(function ($retries, RequestInterface $request, ResponseInterface $response = null, $error = null) {
+
             if ($retries > 0) {
                 return false;
             }
+
             if ($response instanceof ResponseInterface) {
-                if (in_array($response->getStatusCode(), [400, 401])) {
+                // Retry request in case that HTTP response was not successful (HTTP status code different than 2xx)
+                if (substr($response->getStatusCode(), 0, 1) != 2) {
                     return true;
                 }
             }
 
             return false;
-        },
-            function (RequestInterface $request, ResponseInterface $response) {
-                if ($response instanceof ResponseInterface) {
-                    if (in_array($response->getStatusCode(), [400, 401])) {
-                        $token = $this->getAccessToken();
-                        $modify['set_headers']['Authorization'] = 'Bearer '.$token->getToken();
+        }, function (RequestInterface $request, ResponseInterface $response) {
+            if ($response instanceof ResponseInterface) {
+                if (!is_null($this->accessToken)) {
+                    $modify['set_headers']['Authorization'] = 'Bearer '.$this->accessToken->getToken();
 
-                        return Psr7\modify_request($request, $modify);
-                    }
+                    return Psr7\modify_request($request, $modify);
                 }
-
-                return $request;
             }
-        ));
 
-        return $handler;
+            return $request;
+        }
+        ), 'before_add_oauth2_header');
     }
 
     /**
@@ -193,21 +229,6 @@ class Oauth2Client extends Client
         $this->refreshToken = $refreshToken;
     }
 
-    /**
-     * Set the access and refresh token with RefreshTokenGrantType.
-     *
-     * @param AccessToken $accessToken
-     * @param array $refreshTokenConfig
-     */
-    public function setAccessAndRefreshToken(AccessToken $accessToken, array $refreshTokenConfig)
-    {
-        $this->setAccessToken($accessToken);
-
-        $refreshToken = new RefreshToken($refreshTokenConfig);
-        $refreshToken->setRefreshToken($accessToken->getRefreshToken()->getToken());
-        $this->setRefreshTokenGrantType($refreshToken);
-    }
-
     public function getToken(GrantTypeBase $grantType)
     {
         $token_client_config = [];
@@ -272,5 +293,14 @@ class Oauth2Client extends Client
     public function setRefreshTokenGrantType(RefreshTokenGrantTypeInterface $refreshTokenGrantType)
     {
         $this->refreshTokenGrantType = $refreshTokenGrantType;
+    }
+
+    /**
+     * Unregister OAuth2 middlewares used in guzzle handler stack
+     */
+    public function unregisterOauth2()
+    {
+        $this->handlerStack->remove('add_oauth2_header');
+        $this->handlerStack->remove('before_add_oauth2_header');
     }
 }
