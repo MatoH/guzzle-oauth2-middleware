@@ -103,7 +103,7 @@ class Oauth2Client extends Client
         }), 'add_oauth2_header');
 
         // Register middleware that will re-execute the same request in case of some failure (timeout, authorization issue ...)
-        $this->handlerStack->before('add_oauth2_header', $this->retry_modify_request(function ($retries, RequestInterface $request, ResponseInterface $response = null, $error = null) {
+        $this->handlerStack->before('add_oauth2_header', $this->retry_modify_request(function ($retries, RequestInterface $request = null, ResponseInterface $response = null, $error = null) {
 
             if ($retries > 0) {
                 return false;
