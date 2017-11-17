@@ -68,20 +68,22 @@ class Oauth2Client extends Client
      * validate access token and renew if necessary
      *
      * @param GrantTypeBase $grantType
-     * @param array $refreshTokenConfig
+     * @param array|null $refreshTokenConfig
      * @param AccessToken|null $accessToken
      */
-    public function registerOauth2(GrantTypeBase $grantType, array $refreshTokenConfig, AccessToken $accessToken = null)
+    public function registerOauth2(GrantTypeBase $grantType, array $refreshTokenConfig = null, AccessToken $accessToken = null)
     {
         $this->setGrantType($grantType);
 
         $accessToken = $accessToken ?? $this->getAccessToken();
         $this->setAccessToken($accessToken);
 
-        $refreshToken = new RefreshToken($refreshTokenConfig);
-        $refreshToken->setRefreshToken($accessToken->getRefreshToken()->getToken());
-        $this->setRefreshTokenGrantType($refreshToken);
-
+        // If refresh token configuration is not null then create and register refresh token with refresh grant type
+        if (!is_null($refreshTokenConfig)) {
+            $refreshToken = new RefreshToken($refreshTokenConfig);
+            $refreshToken->setRefreshToken($accessToken->getRefreshToken()->getToken());
+            $this->setRefreshTokenGrantType($refreshToken);
+        }
         $this->registerHandlerStackMiddlewares();
     }
 
