@@ -84,6 +84,7 @@ class Oauth2Client extends Client
             $refreshToken->setRefreshToken($accessToken->getRefreshToken()->getToken());
             $this->setRefreshTokenGrantType($refreshToken);
         }
+
         $this->registerHandlerStackMiddlewares();
     }
 
@@ -135,6 +136,11 @@ class Oauth2Client extends Client
 
     /**
      * Retry Call after updating access token.
+     *
+     * @param callable $decider
+     * @param callable $requestModifier
+     * @param callable|null $delay
+     * @return \Closure
      */
     public function retry_modify_request(callable $decider, callable $requestModifier, callable $delay = null)
     {
@@ -203,8 +209,8 @@ class Oauth2Client extends Client
      * Set the access token.
      *
      * @param AccessToken|string $accessToken
-     * @param string             $type
-     * @param int                $expires
+     * @param string|null $type
+     * @param int $expires
      */
     public function setAccessToken($accessToken, $type = null, $expires = null)
     {
@@ -231,6 +237,14 @@ class Oauth2Client extends Client
         $this->refreshToken = $refreshToken;
     }
 
+    /**
+     * Get token object by passing grant type
+     *
+     * @param GrantTypeBase $grantType
+     * @return AccessToken
+     * @throws Exception
+     * @throws InvalidGrantException
+     */
     public function getToken(GrantTypeBase $grantType)
     {
         $token_client_config = [];
@@ -283,6 +297,11 @@ class Oauth2Client extends Client
         }
     }
 
+    /**
+     * Set grant type
+     *
+     * @param GrantTypeBase $grantType
+     */
     public function setGrantType(GrantTypeBase $grantType)
     {
         if (isset($this->config['base_uri'])) {
@@ -292,6 +311,11 @@ class Oauth2Client extends Client
         $this->grantType = $grantType;
     }
 
+    /**
+     * Set refresh token grant type
+     *
+     * @param RefreshTokenGrantTypeInterface $refreshTokenGrantType
+     */
     public function setRefreshTokenGrantType(RefreshTokenGrantTypeInterface $refreshTokenGrantType)
     {
         $this->refreshTokenGrantType = $refreshTokenGrantType;
