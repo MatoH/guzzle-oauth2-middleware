@@ -70,6 +70,9 @@ class Oauth2Client extends Client
      * @param GrantTypeBase $grantType
      * @param array|null $refreshTokenConfig
      * @param AccessToken|null $accessToken
+     *
+     * @throws Exception
+     * @throws InvalidGrantException
      */
     public function registerOauth2(GrantTypeBase $grantType, array $refreshTokenConfig = null, AccessToken $accessToken = null)
     {
@@ -152,7 +155,10 @@ class Oauth2Client extends Client
     /**
      * Get a new access token.
      *
-     * @return AccessToken|null
+     * @return null
+     *
+     * @throws Exception
+     * @throws InvalidGrantException
      */
     protected function acquireAccessToken()
     {
@@ -175,7 +181,10 @@ class Oauth2Client extends Client
     /**
      * Get the access token.
      *
-     * @return AccessToken|null Oauth2 access token
+     * @return AccessToken|null
+     *
+     * @throws Exception
+     * @throws InvalidGrantException
      */
     public function getAccessToken()
     {
@@ -242,12 +251,16 @@ class Oauth2Client extends Client
      *
      * @param GrantTypeBase $grantType
      * @return AccessToken
+     *
      * @throws Exception
      * @throws InvalidGrantException
      */
     public function getToken(GrantTypeBase $grantType)
     {
-        $token_client_config = [];
+        // Use class property config to initialize client for receiving token
+        $token_client_config = $this->config;
+        // Unset handler, which should be used for main request after receiving token
+        unset($token_client_config['handler']);
 
         if (isset($this->config['token_handler'])) {
             $token_client_config['handler'] = $this->config['token_handler'];
