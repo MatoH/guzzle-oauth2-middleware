@@ -341,5 +341,11 @@ class Oauth2Client extends Client
     {
         $this->handlerStack->remove('add_oauth2_header');
         $this->handlerStack->remove('before_add_oauth2_header');
+
+        // Clear object properties to avoid sharing same tokens between multiple oauth2 requests
+        $this->accessToken = null;
+        $this->refreshToken = null;
+        $this->grantType = null;
+        $this->refreshTokenGrantType = null;
     }
 }
