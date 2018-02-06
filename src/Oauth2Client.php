@@ -111,7 +111,9 @@ class Oauth2Client extends Client
         // Register middleware that will re-execute the same request in case of some failure (timeout, authorization issue ...)
         $this->handlerStack->before('add_oauth2_header', $this->retry_modify_request(function ($retries, RequestInterface $request = null, ResponseInterface $response = null, $error = null) {
 
-            if ($retries > 0) {
+            // If retries are not defined in the configuration, don't re-execute the same request
+            $configRetries = $this->config['retries'] ?? 0;
+            if ($configRetries <= $retries) {
                 return false;
             }
 
@@ -274,6 +276,11 @@ class Oauth2Client extends Client
         unset($form_params['token_url'], $form_params['auth_location'], $form_params['body_type'], $form_params['base_uri'], $form_params['jwt_private_key'], $form_params['jwt_private_key_passphrase'], $form_params['jwt_payload'], $form_params['jwt_algorithm']);
 
         $requestOptions = [];
+
+        // If curl options are defined, apply them to the token request options
+        if (isset($config['curl'])) {
+            $requestOptions['curl'] = $config['curl'];
+        }
 
         if ($config['auth_location'] !== 'body') {
             $requestOptions['auth'] = [$config['client_id'], $config['client_secret']];
